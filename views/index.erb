@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+   <title>RRHH</title>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+   <style>
+     .starter-template {
+       padding: 1rem 10rem 10rem 10rem;
+     }
+     #result {
+       text-align: center;
+       padding: 2rem;
+     }
+   </style>
+   <script>
+    function progressive_holiday_date_range(input) {
+      var date1 = $("#recruitment_date_of_last_employer");
+      var date2 = $("#current_date");
+      var maxDate, minDate;
+
+      if($(input).is(date1)) {
+        maxDate = date2.val();
+      } else {
+        minDate = date1.val();
+      }
+
+      return { minDate: minDate, maxDate: maxDate };
+    }
+
+    function datepicker_start() {
+      $.datepicker.regional['es'] = {
+        closeText: 'Cerrar',
+        prevText: '< Ant',
+        nextText: 'Sig >',
+        currentText: 'Hoy',
+        monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+        monthNamesShort: ['Ene','Feb','Mar','Abr', 'May','Jun','Jul','Ago','Sep', 'Oct','Nov','Dic'],
+        dayNames: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+        dayNamesShort: ['Dom','Lun','Mar','Mié','Juv','Vie','Sáb'],
+        dayNamesMin: ['Do','Lu','Ma','Mi','Ju','Vi','Sá'],
+        weekHeader: 'Sm',
+        dateFormat: 'dd/mm/yy',
+        firstDay: 1,
+        isRTL: false,
+        showMonthAfterYear: false,
+        yearSuffix: ''
+      };
+
+      $.datepicker.setDefaults($.datepicker.regional['es']);
+
+      $("#current_date, #recruitment_date_of_last_employer").datepicker({
+        changeMonth: true,
+        changeYear: true,
+        beforeShow: progressive_holiday_date_range
+      }).click(function(){
+         $('.ui-datepicker').css({ 'top' : $(this).offset().top + 40 });
+      });
+    }
+
+    function form_remote() {
+      $('form').submit(function(e){
+         e.preventDefault();
+         var form = $(e.target).closest('form')
+         $.ajax({
+          type: form.attr('method'),
+          url: form.attr('action'),
+           data: form.serialize(),
+           success: function(data) {
+             form.find("#progressive_holiday_months > .list-group-item").remove();
+             form[0].reset();
+
+            $("#result").html(data);
+            $('#modal').modal('show');
+           },
+           error: function(xhr) {
+             $("#result").html(xhr.responseText);
+             $('#modal').modal('show');
+           }
+         });
+      });
+    }
+
+    function progressive_holiday_add_month(input) {
+      var years = parseInt(input.val());
+      if(!isNaN(years) && years > 0) {
+        $("#progressive_holiday_months").append(
+          '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+          '<input type="hidden" name="years_of_service_with_other_employers[]" value="' + years + '" />' +
+          years + ' años' +
+          '<button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+          '</li>')
+        input.val('');
+      }
+    }
+
+    function progressive_holiday_form_start() {
+      $("#progressive_holiday_add_month").keydown(function(e){
+        if(e.keyCode == 13) {
+          e.preventDefault();  progressive_holiday_add_month($(this));
+        }
+       });
+
+       $("#progressive_holiday_add_month_button").click(function(e) {
+         e.preventDefault();
+         progressive_holiday_add_month($("#progressive_holiday_add_month"));
+       });
+
+       $("#progressive_holiday_months").on('click', '.close', function(e) { $(this).closest(".list-group-item").remove(); });
+    }
+
+     $( function() {
+       datepicker_start();
+       progressive_holiday_form_start();
+       form_remote();
+     });
+
+   </script>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+      <a class="navbar-brand" href="#">RRHH</a>
+    </nav>
+
+    <main role="main" class="container">
+
+      <div class="starter-template">
+
+        <div class="accordion" id="accordionExample">
+          <div class="card">
+            <div class="card-header" id="headingOne">
+              <h5 class="mb-0">
+                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                  Indemnización por años de servicio
+                </button>
+              </h5>
+            </div>
+
+            <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+              <div class="card-body">
+                <!-- form -->
+                <form action="compensation" method="post">
+                  <div class="form-group">
+                    <label for="salary">Sueldo</label>
+                    <input name="salary" type="number" min="0" class="form-control" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="worked_months">Meses trabajados</label>
+                    <input name="worked_months" type="number" min="0" class="form-control" />
+                  </div>
+
+                  <input type="submit" class="btn btn-primary" value="Calcular" />
+                </form>
+                <!-- end form -->
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingTwo">
+              <h5 class="mb-0">
+                <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                  Beneficio del feriado progresivo
+                </button>
+              </h5>
+            </div>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+              <div class="card-body">
+                <!-- form -->
+                <form action="progressive_holiday" method="post">
+                  <div class="form-group">
+                    <div class="input-group mb-3">
+                      <input id="progressive_holiday_add_month" type="number" class="form-control" min="1" placeholder="Años de antigüedad con empleadores anteriores ..."/>
+                      <div class="input-group-append">
+                        <button id="progressive_holiday_add_month_button" class="btn btn-outline-primary" type="button">Agregar</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <ul id="progressive_holiday_months" class="list-group">
+                    </ul>
+                  </div>
+
+                  <hr />
+
+                  <div class="form-group">
+                    <label for="recruitment_date_of_last_employer">Fecha de ingreso al empleador actual</label>
+                    <input id="recruitment_date_of_last_employer" name="recruitment_date_of_last_employer" type="text" class="form-control" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="current_date">Fecha en la cual se realiza el cálculo</label>
+                    <input id="current_date" name="current_date" type="text" class="form-control" />
+                  </div>
+
+                  <input type="submit" class="btn btn-primary" value="Calcular" />
+                </form>
+                <!-- end form -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <div id="modal" class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Respuesta</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div id="result"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
